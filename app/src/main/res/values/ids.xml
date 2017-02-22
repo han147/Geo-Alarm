@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="todo_list_2" />
+    <item type="id" name="todo_list_3" />
+    <item type="id" name="todo_list_4" />
+    <item type="id" name="todo_list_5" />
+
+    <item type="id" name="todo_list_content_0" />
+    <item type="id" name="todo_list_content_1" />
+    <item type="id" name="todo_list_content_2" />
+    <item type="id" name="todo_list_content_3" />
+    <item type="id" name="todo_list_content_4" />
+
+
+    <item type="id" name="todo_list_check_0" />
+    <item type="id" name="todo_list_check_1" />
+    <item type="id" name="todo_list_check_2" />
+    <item type="id" name="todo_list_check_3" />
+    <item type="id" name="todo_list_check_4" />
+</resources>
