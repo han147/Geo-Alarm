@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.InputType;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
@@ -38,6 +39,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.ResultCallbacks;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.*;
 import com.google.android.gms.maps.model.*;
 
@@ -106,6 +108,9 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
     @Bind(R.id.et_todolist)
     EditText firstTodo;
 
+    @Bind(R.id.sound_switch)
+    Switch soundSwitch;
+
 
 
     @Override
@@ -141,14 +146,14 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
         intent = getIntent();
         existId = intent.getLongExtra("id",-1);
         if(existId == -1) {
-            toolbar.setTitle("등록");
+            getSupportActionBar().setTitle("등록");
 
             getCurrentLocation();
             Long id = System.currentTimeMillis();
             strId = Long.toString(id);
 
         } else {
-            toolbar.setTitle("수정");
+            getSupportActionBar().setTitle("수정");
             AlarmModel existAlarmModel = realm.where(AlarmModel.class).equalTo("id",existId).findFirst();
 
             showExistAlarm(existAlarmModel);
@@ -160,9 +165,6 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
 
 
 
-
-
-
         MapFragment mapFragment = (MapFragment) getFragmentManager()
                 .findFragmentById(R.id.map);
 
@@ -170,10 +172,10 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
 
 
         intent = new Intent(this, LocationFenceService.class);
-
-        intent.putExtra("id",strId);
+        intent.setAction(FenceUtil.FENCE_RECEIVER_ACTION);
         //TODO: 4번째 파라마터 flag 값 확인
         mPendingIntent = PendingIntent.getService(this, 1, intent,0);
+
 
 
 
@@ -192,6 +194,7 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
         spinner.setSelection(spinnerPosition);
 
         repeatSwitch.setChecked(alarmModel.getRepeat());
+        soundSwitch.setChecked(alarmModel.getOnSound());
 
         List<ToDoModel> todoList = alarmModel.getToDoList();
         if(todoList.size()>0) {
@@ -201,7 +204,7 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
             addList();
             EditText sibling = (EditText)findViewById(toDoIdList.get(i-1));
             View view = ((LinearLayout) sibling.getParent()).findViewById(R.id.todo_delete_btn);
-            Log.i("button test", view.toString());
+
             ((LinearLayout) sibling.getParent()).findViewById(R.id.todo_add_btn).setVisibility(View.INVISIBLE);
             ((LinearLayout) sibling.getParent()).findViewById(R.id.todo_delete_btn).setVisibility(View.INVISIBLE);
             EditText tempEditText = (EditText)findViewById(toDoIdList.get(i));
@@ -232,7 +235,7 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
             startService(intent);
             // fence 등록
             if(existId == -1) {
-                registerFences(strId);
+                FenceUtil.registerFences(alarmData,this, mPendingIntent, this);
             } else {
                 AlarmListFragment.alarmListAdapter.notifyItemChanged(clickedItemIndex);
                 updateFence(strId);
@@ -289,49 +292,6 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
-    }
-
-    private void registerFences(String id) {
-        // ACCESS_FINE_LOCATION permission이 없는 경우
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) !=
-                PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    FenceUtil.PERMISSION_REQUEST_ACCESS_FINE_LOCATION);
-        // ACCESS_FINE_LOCATION permission이 있는 경우
-        } else {
-            //Fence 생성
-
-            Log.i("AddActivity id check",strId);
-            AwarenessFence inLocationFence = LocationFence.in(mLatitude,mLongitude,mRadius, 1);
-            AwarenessFence exitingLocationFence = LocationFence.exiting(mLatitude,mLongitude, mRadius);
-            AwarenessFence enteringLocationFence = LocationFence.entering(mLatitude,mLongitude, mRadius);
-
-
-
-            //Fence 등록
-            Awareness.FenceApi.updateFences(
-                    mApiClient,
-                    new FenceUpdateRequest.Builder()
-                            .addFence(strId, inLocationFence, mPendingIntent)
-                            .addFence(strId, exitingLocationFence, mPendingIntent)
-                            .addFence(strId, enteringLocationFence, mPendingIntent)
-                            .build())
-                    .setResultCallback(new ResultCallback<Status>() {
-                        @Override
-                        public void onResult(@NonNull Status status) {
-                            if (status.isSuccess()) {
-                                Toast.makeText(getApplicationContext(),"Fence Registered",Toast.LENGTH_SHORT)
-                                        .show();
-
-                            } else {
-                                Toast.makeText(getApplicationContext(),"Fence Not Registered",Toast.LENGTH_LONG)
-                                        .show();
-                            }
-                        }
-                    });
-
-        }
     }
 
     @Override
@@ -403,23 +363,34 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
     public void addList() {
-        int twoDp = getPixelFromDp(2);
+        int twoDp = (int) getResources().getDimension(R.dimen.padding_button);
+        int eightDp = (int) getResources().getDimension(R.dimen.margin_button);
+        int buttonSize = (int) getResources().getDimension(R.dimen.add_or_del_button_size);
+
         LinearLayout newListContent = new LinearLayout(this);
         newListContent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         newListContent.setOrientation(LinearLayout.HORIZONTAL);
 
         EditText newEditText = new EditText(this);
-        newEditText.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         newEditText.setId(toDoIdList.get(todoListLayout.getChildCount()-1));
+        newEditText.setMaxLines(1);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        layoutParams.setMargins(eightDp,0,eightDp,0);
+        newEditText.setLayoutParams(layoutParams);
+        newEditText.setInputType(InputType.TYPE_CLASS_TEXT);
 
 
 
         Button newDeleteButton = new Button(this);
-        newDeleteButton.setLayoutParams(new LinearLayout.LayoutParams(getPixelFromDp(30),getPixelFromDp(30)));
+        layoutParams = new LinearLayout.LayoutParams(buttonSize,buttonSize);
+        layoutParams.setMargins(0,0,eightDp,0);
+        newDeleteButton.setLayoutParams(layoutParams);
         newDeleteButton.setPadding(twoDp,twoDp,twoDp,twoDp);
+
         newDeleteButton.setText("-");
-        newDeleteButton.setBackgroundColor(Color.blue(1));
+        newDeleteButton.setTextColor(getResources().getColor(R.color.primary_light));
         newDeleteButton.setId(R.id.todo_delete_btn);
+        newDeleteButton.setBackgroundColor(getResources().getColor(R.color.primary));
         newDeleteButton.setOnClickListener(this);
 
 
@@ -428,25 +399,24 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
 
         if(todoListLayout.getChildCount() < 5) {
             Button newAddButton = new Button(this);
-            newAddButton.setLayoutParams(new LinearLayout.LayoutParams(getPixelFromDp(30),getPixelFromDp(30)));
+            newAddButton.setLayoutParams(layoutParams);
             newAddButton.setPadding(twoDp,twoDp,twoDp,twoDp);
             newAddButton.setText("+");
-            newAddButton.setBackgroundColor(Color.blue(1));
+            newAddButton.setTextColor(getResources().getColor(R.color.primary_light));
 
             newAddButton.setId(R.id.todo_add_btn);
             newAddButton.setOnClickListener(this);
+            newAddButton.setBackgroundColor(getResources().getColor(R.color.primary));
 
             newListContent.addView(newAddButton);
         }
 
         todoListLayout.addView(newListContent);
 
+        newEditText.requestFocus();
+
     }
 
-    private int getPixelFromDp(int dp){
-        final int pixel = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, getResources().getDisplayMetrics());
-        return pixel;
-    }
 
 
     @Override
@@ -491,34 +461,42 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
 
         RealmList<ToDoModel> toDoList = new RealmList<ToDoModel>();
 
-        ToDoModel toDoModel = new ToDoModel();
-        EditText todoEditText = (EditText) findViewById(R.id.et_todolist);
-        toDoModel.setContent(todoEditText.getText().toString());
-        toDoModel.setCheck(false);
-        toDoList.add(toDoModel);
+//        ToDoModel toDoModel = new ToDoModel();
+//        EditText todoEditText = (EditText) findViewById(R.id.et_todolist);
+//        toDoModel.setContent(todoEditText.getText().toString());
+//        toDoModel.setCheck(false);
+//        toDoList.add(toDoModel);
 
-        for(int i=1;i<todoListLayout.getChildCount()-1;i++) {
-            toDoModel = new ToDoModel();
-            View testView= findViewById(toDoIdList.get(i));
-            Log.i("todoEditText",testView.toString());
-            todoEditText = (EditText) findViewById(toDoIdList.get(i));
-            toDoModel.setContent(todoEditText.getText().toString());
-            toDoModel.setCheck(false);
-            toDoList.add(toDoModel);
+        for(int i=0;i<todoListLayout.getChildCount()-1;i++) {
+            ToDoModel toDoModel = new ToDoModel();
+
+            EditText todoEditText = (EditText) findViewById(toDoIdList.get(i));
+            if(!(todoEditText.getText().toString().equals(""))) {
+                toDoModel.setContent(todoEditText.getText().toString());
+                toDoModel.setCheck(false);
+                toDoList.add(toDoModel);
+            }
+
         }
 
         alarmData.setToDoList(toDoList);
 
+        alarmData.setTodoCount(toDoList.size());
+
         alarmData.setRepeat(repeatSwitch.isChecked());
 
+        alarmData.setOnSound(soundSwitch.isChecked());
+
         alarmData.setOnoff(true);
+
+        alarmData.setAlarmDelete(false);
 
 
         return alarmData;
     }
 
     private void saveAlarm(AlarmModel alarmData) {
-        Realm realm = Realm.getDefaultInstance();
+//        Realm realm = Realm.getDefaultInstance();
         realm.beginTransaction();
 
 
@@ -527,7 +505,13 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
 
         realm.commitTransaction();
         AlarmListAdapter alarmListAdapter = AlarmListFragment.alarmListAdapter;
-        alarmListAdapter.notifyItemChanged(alarmListAdapter.getItemCount()+1);
+//        alarmListAdapter.notifyItemChanged(alarmListAdapter.getItemCount()+1);
+        alarmListAdapter.notifyDataSetChanged();
+
+        TodoListAdapter todoListAdapter = ToDoListFragment.todoListAdapter;
+        todoListAdapter.notifyDataSetChanged();
+
+
     }
 
     protected void updateFence(final String fenceKey) {
@@ -538,7 +522,10 @@ public class AddActivity extends AppCompatActivity implements OnMapReadyCallback
                         .build()).setResultCallback(new ResultCallbacks<Status>() {
             @Override
             public void onSuccess(@NonNull Status status) {
-                registerFences(strId);
+                Realm realm = Realm.getDefaultInstance();
+                AlarmModel alarmData = realm.where(AlarmModel.class).equalTo("id",Long.valueOf(fenceKey)).findFirst();
+                FenceUtil.registerFences(alarmData,getApplicationContext(), mPendingIntent, getParent());
+//                Log.i("unregisterFence", getParent().getClass().toString());
                 Log.i("unregisterFence", "Fence " + fenceKey + " successfully removed.");
             }
 

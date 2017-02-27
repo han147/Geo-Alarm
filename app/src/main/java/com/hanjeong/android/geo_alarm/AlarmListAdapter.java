@@ -40,6 +40,7 @@ public class AlarmListAdapter extends RecyclerView.Adapter<AlarmListAdapter.Alar
     public interface ListItemClickListener {
         void onListItemClick(int clickedItemIndex);
         void onSwitchChange(int changeItemIndex, Boolean isChecked);
+        void onClickDeleteButton(int clickedItemIndex);
     }
 
     @Override
@@ -58,12 +59,12 @@ public class AlarmListAdapter extends RecyclerView.Adapter<AlarmListAdapter.Alar
     @Override
     public void onBindViewHolder(AlarmListViewHolder holder, int position) {
         AlarmModel alarm = alarmList.get(position);
-
         String title = alarm.getTitle();
         String address = alarm.getAddress();
         Boolean onoff = alarm.getOnoff();
 
         holder.bind(title, address, onoff);
+
     }
 
     @Override
@@ -119,6 +120,12 @@ public class AlarmListAdapter extends RecyclerView.Adapter<AlarmListAdapter.Alar
             int clickedPosition = getAdapterPosition();
             listItemClickListener.onSwitchChange(clickedPosition, isChecked);
 
+        }
+
+        @OnClick(R.id.alarm_delete_button)
+        public void onClickDeleteButton() {
+            int clickedPosition = getAdapterPosition();
+            listItemClickListener.onClickDeleteButton(clickedPosition);
         }
     }
 }

@@ -18,6 +18,7 @@ import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 
 /**
@@ -41,6 +42,7 @@ public class TodoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     public interface ToDoListClickListener {
         void onListItemClick(int clickedItemIndex);
         void onCheckBoxClick(View view, int clickedItemIndex);
+        void onClickDeleteButton(int clickedItemIndex);
     }
 
     @Override
@@ -68,25 +70,32 @@ public class TodoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         AlarmModel alarm = alarmList.get(0);
 
+
         switch (getItemViewType(position)) {
             case 0:
                 if(position != 0) {
                     alarm = alarmList.get(position/2);
                 }
+
                 String title = alarm.getTitle();
                 String address = alarm.getAddress();
+
                 TodoListTitleViewHolder titleViewHolder = (TodoListTitleViewHolder) holder;
                 titleViewHolder.bind(title, address);
 
-                Log.i("Bind Position",alarm.getTitle()+" : " +Integer.toString(position));
+
+//                Log.i("Bind Title Position",alarm.getTitle()+" : " +Integer.toString(position));
                 break;
             case 1:
                 alarm = alarmList.get(position/2);
                 List<ToDoModel> todoList = alarm.getToDoList();
-                TodoListContentViewHolder contentViewHolder = (TodoListContentViewHolder) holder;
-                contentViewHolder.bind(todoList);
 
-                Log.i("Bind Position",alarm.getTitle()+" : " +Integer.toString(position));
+                TodoListContentViewHolder contentViewHolder = (TodoListContentViewHolder) holder;
+                contentViewHolder.bind(todoList,position);
+
+
+
+//                Log.i("Bind Content Position",alarm.getTitle()+" : " +Integer.toString(position));
                 break;
         }
 
@@ -97,6 +106,7 @@ public class TodoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     @Override
     public int getItemCount() {
+
         return alarmList.size()*2;
     }
 
@@ -126,6 +136,12 @@ public class TodoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             toDoListClickListener.onListItemClick(clickedPosition);
             Log.i("holder onclick", Integer.toString(clickedPosition));
         }
+
+        @OnClick(R.id.todolist_delete_button)
+        public void onClickedDeleteButton() {
+            int clickedPosition = getAdapterPosition();
+            toDoListClickListener.onClickDeleteButton(clickedPosition);
+        }
     }
 
     class TodoListContentViewHolder extends RecyclerView.ViewHolder  implements View.OnClickListener, CompoundButton.OnCheckedChangeListener{
@@ -133,45 +149,47 @@ public class TodoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         @Bind(R.id.todolist_content)
         LinearLayout todoListContent;
 
+
+
         public TodoListContentViewHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
             itemView.setOnClickListener(this);
-//
-//            if(itemView instanceof CheckBox) {
-//                ((CheckBox) itemView).setOnCheckedChangeListener(this);
-//            }
+
 
         }
 
-        public void bind(List<ToDoModel> todoList) {
-            TypedArray contentids = context.getResources().obtainTypedArray(R.array.todolist_content_id_array);
-            TypedArray checkIds = context.getResources().obtainTypedArray(R.array.todolist_check_id_array);
-            for(int i=0;i<todoList.size();i++) {
+        public void bind(List<ToDoModel> todoList, int position) {
+            todoListContent.removeAllViews();
+            if(getAdapterPosition() == position) {
+                TypedArray contentids = context.getResources().obtainTypedArray(R.array.todolist_content_id_array);
+                TypedArray checkIds = context.getResources().obtainTypedArray(R.array.todolist_check_id_array);
+                for (int i = 0; i < todoList.size(); i++) {
 
-                LinearLayout oneOfToDo = new LinearLayout(context);
-                LinearLayout.LayoutParams lparam = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                oneOfToDo.setLayoutParams(lparam);
-                oneOfToDo.setOrientation(LinearLayout.HORIZONTAL);
+                    LinearLayout oneOfToDo = new LinearLayout(context);
+                    LinearLayout.LayoutParams lparam = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                    oneOfToDo.setLayoutParams(lparam);
+                    oneOfToDo.setOrientation(LinearLayout.HORIZONTAL);
 
-                TextView contentTextView = new TextView(context);
-                contentTextView.setId(contentids.getResourceId(i,i));
-                contentTextView.setText(todoList.get(i).getContent());
-                contentTextView.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+                    TextView contentTextView = new TextView(context);
+                    contentTextView.setId(contentids.getResourceId(i, i));
+                    contentTextView.setText(todoList.get(i).getContent());
+                    contentTextView.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-                CheckBox checkBox = new CheckBox(context);
-                checkBox.setId(checkIds.getResourceId(i,i));
-                checkBox.setChecked(todoList.get(i).isCheck());
-                checkBox.setOnCheckedChangeListener(this);
+                    CheckBox checkBox = new CheckBox(context);
+                    checkBox.setId(checkIds.getResourceId(i, i));
+                    checkBox.setChecked(todoList.get(i).isCheck());
+                    checkBox.setOnCheckedChangeListener(this);
 //                checkBox.setWidth(LinearLayout.LayoutParams.WRAP_CONTENT);
 
 
-                oneOfToDo.addView(contentTextView);
-                oneOfToDo.addView(checkBox);
+                    oneOfToDo.addView(contentTextView);
+                    oneOfToDo.addView(checkBox);
 
-                todoListContent.addView(oneOfToDo);
+                    todoListContent.addView(oneOfToDo);
 
+                }
             }
         }
 
@@ -187,5 +205,6 @@ public class TodoListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             int clickedPosition = getAdapterPosition();
             toDoListClickListener.onCheckBoxClick(buttonView, clickedPosition);
         }
+
     }
 }

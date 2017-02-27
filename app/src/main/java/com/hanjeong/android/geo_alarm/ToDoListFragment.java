@@ -14,7 +14,9 @@ import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 import butterknife.Bind;
@@ -40,6 +42,7 @@ public class ToDoListFragment extends Fragment implements TodoListAdapter.ToDoLi
 
         View view = inflater.inflate(R.layout.fragment_todolist,container, false);
         ButterKnife.bind(this, view);
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         todoListView.setLayoutManager(layoutManager);
 
@@ -61,7 +64,9 @@ public class ToDoListFragment extends Fragment implements TodoListAdapter.ToDoLi
     private List<AlarmModel> getAllList() {
         Realm realm = Realm.getDefaultInstance();
 
-        List<AlarmModel> alarmList = realm.where(AlarmModel.class).findAll();
+        List<AlarmModel> alarmList = realm.where(AlarmModel.class).greaterThan("todoCount",0).findAll();
+        //List<AlarmModel> newList = new RealmList<AlarmModel>();
+
 
         return alarmList;
     }
@@ -89,6 +94,25 @@ public class ToDoListFragment extends Fragment implements TodoListAdapter.ToDoLi
 
     }
 
+    @Override
+    public void onClickDeleteButton(int clickedItemIndex) {
+        Realm realm = Realm.getDefaultInstance();
+        realm.beginTransaction();
+
+        AlarmModel alarmModel = alarmList.get(clickedItemIndex/2);
+        alarmModel.deleteFromRealm();
+
+        realm.commitTransaction();
+
+        alarmList = getAllList();
+        AlarmListAdapter alarmListAdapter = AlarmListFragment.alarmListAdapter;
+        alarmListAdapter.notifyDataSetChanged();
+
+        TodoListAdapter todoListAdapter = ToDoListFragment.todoListAdapter;
+        todoListAdapter.notifyDataSetChanged();
+
+    }
+
     private void updateToDo(int itemIndex, int todoIndex, Boolean isChecked) {
         Realm realm = Realm.getDefaultInstance();
         realm.beginTransaction();
@@ -104,8 +128,6 @@ public class ToDoListFragment extends Fragment implements TodoListAdapter.ToDoLi
 
         realm.copyToRealmOrUpdate(alarmModel);
         realm.commitTransaction();
-
-        realm.close();
 
     }
 }

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context ="com.example.android.alarmapp.activity.AddOrUpdateActivity">
     <item android:id="@+id/add_menu_btn"
-        android:title="add"
+        android:title="저장"
         android:orderInCategory="100"
         app:showAsAction="ifRoom" />
 

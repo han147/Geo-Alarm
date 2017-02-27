@@ -31,8 +31,12 @@ public class FenceUtil {
     static GoogleApiClient mApiClient;
     public static final String IN_LOCATION_FENCE_KEY = "IN_LOCATION_FENCE_KEY";
     public static final String ENTERING_LOCATION_FENCE_KEY = "ENTERING_LOCATION_FENCE_KEY";
+    private static final String EXITING_LOCATION_FENCE_KEY= "EXITING_LOCATION_FENCE_KEY";
     public static final int STATUS_ENTERING = 2;
     public static final int PERMISSION_REQUEST_ACCESS_FINE_LOCATION = 940;
+
+    public static final String FENCE_RECEIVER_ACTION =
+            "com.hanjeong.android.geo_alarm.FenceUtil.FENCE_RECEIVER_ACTION";
 
     public static GoogleApiClient initApiClient(Context context) {
         mApiClient = new GoogleApiClient.Builder(context)
@@ -56,35 +60,36 @@ public class FenceUtil {
             // ACCESS_FINE_LOCATION permission이 있는 경우
         } else {
             //Fence 생성
-            String id = Long.toString(alarmModel.getId());
+            final  String id = Long.toString(alarmModel.getId());
             Double latitude = alarmModel.getLatitude();
             Double longitude = alarmModel.getLongitude();
             Double radius = alarmModel.getRadius();
 
-            AwarenessFence inLocationFence = LocationFence.in(latitude,longitude,radius, 1);
-            AwarenessFence exitingLocationFence = LocationFence.exiting(latitude,longitude, radius);
-            AwarenessFence enteringLocationFence = LocationFence.entering(latitude,longitude, radius);
-
+            AwarenessFence inLocationFence = LocationFence.in(latitude, longitude, radius, 1);
+            AwarenessFence exitingLocationFence = LocationFence.exiting(latitude, longitude, radius);
+            AwarenessFence enteringLocationFence = LocationFence.entering(latitude, longitude, radius);
 
 
             //Fence 등록
             Awareness.FenceApi.updateFences(
                     mApiClient,
                     new FenceUpdateRequest.Builder()
-                            .addFence(id, inLocationFence, mPendingIntent)
-                            .addFence(id, exitingLocationFence, mPendingIntent)
-                            .addFence(id, enteringLocationFence, mPendingIntent)
+                            .addFence(IN_LOCATION_FENCE_KEY+"/"+id, inLocationFence, mPendingIntent)
+                            .addFence(EXITING_LOCATION_FENCE_KEY+"/"+id, exitingLocationFence, mPendingIntent)
+                            .addFence(ENTERING_LOCATION_FENCE_KEY+"/"+id, enteringLocationFence, mPendingIntent)
                             .build())
                     .setResultCallback(new ResultCallback<Status>() {
                         @Override
                         public void onResult(@NonNull Status status) {
                             if (status.isSuccess()) {
-                                Toast.makeText(context,"Fence Registered",Toast.LENGTH_SHORT)
+                                Log.i("register", "Fence " + id + " successfully registered.");
+                                Toast.makeText(context, "알람이 설정되었습니다", Toast.LENGTH_SHORT)
                                         .show();
 
                             } else {
-                                Toast.makeText(context,"Fence Not Registered",Toast.LENGTH_LONG)
+                                Toast.makeText(context, "Fence Not Registered", Toast.LENGTH_LONG)
                                         .show();
+                                Log.i("not register", status.toString());
                             }
                         }
                     });
@@ -123,14 +128,15 @@ public class FenceUtil {
 //            }
 //        }
         /* 실행중인 service 목록 보기 */
-        ActivityManager am = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningServiceInfo> rs = am.getRunningServices(50);
 
-        for(int i=0; i<rs.size(); i++){
+        for (int i = 0; i < rs.size(); i++) {
             ActivityManager.RunningServiceInfo rsi = rs.get(i);
-            Log.d("run service","Package Name : " + rsi.service.getPackageName());
+            Log.d("run service", "Package Name : " + rsi.service.getPackageName());
         }
 
     }
+
 
 }

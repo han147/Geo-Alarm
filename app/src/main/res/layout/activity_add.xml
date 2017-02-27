@@ -16,8 +16,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:layout_scrollFlags="scroll|enterAlways|snap" />
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -61,13 +60,16 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Title"
-                    android:layout_margin="8dp"/>
+                    android:layout_margin="8dp" />
                 <EditText
                     android:id="@+id/et_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_margin="8dp"/>
+                    android:layout_marginRight="8dp"
+                    android:layout_marginLeft="8dp"
+                    android:maxLines="1"
+                    android:inputType="text"/>
             </LinearLayout>
 
             <LinearLayout
@@ -83,8 +85,9 @@
                     android:id="@+id/radius_spinner"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-
-                    style="@android:style/Widget.Holo.Light.Spinner"/>
+                    style="@android:style/Widget.Holo.Light.Spinner"
+                    android:layout_marginRight="8dp"
+                    android:layout_marginLeft="8dp"/>
             </LinearLayout>
 
             <LinearLayout
@@ -106,23 +109,28 @@
                         android:id="@+id/et_todolist"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"/>
+                        android:layout_weight="1"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp"
+                        android:maxLines="1"
+                        android:inputType="text"/>
                     <Button
                         android:id="@+id/todo_delete_btn"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:padding="2dp"
+                        android:layout_width="@dimen/add_or_del_button_size"
+                        android:layout_height="@dimen/add_or_del_button_size"
+                        android:layout_marginRight="@dimen/margin_button"
                         android:text="-"
-                        android:textColor="#cccccc"
+                        android:padding="@dimen/padding_button"
                         android:visibility="invisible"/>
                     <Button
                         android:id="@+id/todo_add_btn"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:padding="2dp"
+                        android:layout_width="@dimen/add_or_del_button_size"
+                        android:layout_height="@dimen/add_or_del_button_size"
+                        android:layout_marginRight="@dimen/margin_button"
                         android:text="+"
-
-                        android:textColor="#cccccc" />
+                        android:backgroundTint="@color/primary"
+                        android:textColor="@color/primary_light"
+                        android:padding="@dimen/padding_button"/>
 
                 </LinearLayout>
             </LinearLayout>
@@ -138,7 +146,9 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="반복"/>
+                    android:text="반복"
+                    android:layout_margin="8dp"
+                    android:layout_gravity="center_vertical"/>
                 <Switch
                     android:id="@+id/repeat_switch"
                     android:layout_width="wrap_content"
@@ -154,8 +164,11 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="소리알람"/>
+                    android:text="소리알람"
+                    android:layout_margin="8dp"
+                    android:layout_gravity="center_vertical"/>
                 <Switch
+                    android:id="@+id/sound_switch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>

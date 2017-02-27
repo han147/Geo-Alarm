@@ -56,7 +56,7 @@ public class AlarmListFragment extends Fragment implements AlarmListAdapter.List
     private List<AlarmModel> getAllList() {
         Realm realm = Realm.getDefaultInstance();
 
-        List<AlarmModel> alarmList = realm.where(AlarmModel.class).findAll();
+        List<AlarmModel> alarmList = realm.where(AlarmModel.class).equalTo("alarmDelete", false).findAll();
 
         return alarmList;
     }
@@ -94,5 +94,29 @@ public class AlarmListFragment extends Fragment implements AlarmListAdapter.List
             FenceUtil.unregisterFence(getContext(), Long.toString(changedAlarm.getId()));
         }
 
+    }
+
+    @Override
+    public void onClickDeleteButton(int clickedItemIndex) {
+        Realm realm = Realm.getDefaultInstance();
+        realm.beginTransaction();
+        AlarmModel deletedModel = alarmList.get(clickedItemIndex);
+
+        if(deletedModel.getToDoList().size() > 0) {
+            deletedModel.setAlarmDelete(true);
+
+            realm.copyToRealmOrUpdate(deletedModel);
+        } else {
+            deletedModel.deleteFromRealm();
+
+        }
+
+
+        realm.commitTransaction();
+
+        alarmList = getAllList();
+
+        AlarmListAdapter alarmListAdapter = AlarmListFragment.alarmListAdapter;
+        alarmListAdapter.notifyDataSetChanged();
     }
 }

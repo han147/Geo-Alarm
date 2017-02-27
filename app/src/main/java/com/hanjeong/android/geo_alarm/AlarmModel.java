@@ -26,8 +26,13 @@ public class AlarmModel extends RealmObject{
     Boolean repeat;
 
     RealmList<ToDoModel> toDoList;
+    int todoCount;
 
     Boolean onoff;
+
+    Boolean alarmDelete;
+
+    Boolean onSound;
 
     public Long getId() {
         return id;
@@ -93,11 +98,35 @@ public class AlarmModel extends RealmObject{
         this.toDoList = toDoList;
     }
 
+    public int getTodoCount() {
+        return todoCount;
+    }
+
+    public void setTodoCount(int todoCount) {
+        this.todoCount = todoCount;
+    }
+
     public Boolean getOnoff() {
         return onoff;
     }
 
     public void setOnoff(Boolean onoff) {
         this.onoff = onoff;
+    }
+
+    public Boolean getAlarmDelete() {
+        return alarmDelete;
+    }
+
+    public void setAlarmDelete(Boolean alarmDelete) {
+        this.alarmDelete = alarmDelete;
+    }
+
+    public Boolean getOnSound() {
+        return onSound;
+    }
+
+    public void setOnSound(Boolean onSound) {
+        this.onSound = onSound;
     }
 }

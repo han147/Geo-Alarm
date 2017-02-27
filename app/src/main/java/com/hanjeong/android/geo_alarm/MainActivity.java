@@ -7,6 +7,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -39,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
         tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
 
+
+
         PagerAdapter adapter = new PagerAdapter
                 (getSupportFragmentManager(), tabLayout.getTabCount());
         viewPager.setAdapter(adapter);
@@ -60,8 +63,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+//        Log.i("flag",Integer.toString(getIntent().getIntExtra("tabFlag",0)));
+//        if(getIntent().getIntExtra("tabFlag",0) == 1) {
+//            tabLayout.getTabAt(1).select();
+//        }
 
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        if(intent.getIntExtra("tabFlag",0) == 1) {
+            tabLayout.getTabAt(1).select();
+        }
     }
 
     @OnClick(R.id.add_fabtn)

@@ -5,12 +5,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.support.annotation.Nullable;
-import android.support.v7.app.NotificationCompat;
-import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -23,8 +19,8 @@ import io.realm.Realm;
  */
 
 public class LocationFenceService extends Service {
-    private static final Object sSyncAdapterLock = new Object();
-    private FenceState fenceState;
+
+
 
 
     @Nullable
@@ -35,26 +31,62 @@ public class LocationFenceService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null) {
+            Log.i("intent null check", "intent is null");
+            return START_STICKY;
+        }
 
-        fenceState = FenceState.extract(intent);
+        FenceState fenceState = FenceState.extract(intent);
+        if(fenceState == null){
+            Log.i("fence null check", "fenceState is null");
+        }
         String id = fenceState.getFenceKey();
-        Log.i("Service intent id",intent.getStringExtra("id"));
+
         if(id == null) {
             Log.i("fence state test",Integer.toString(fenceState.getCurrentState()));
 
         } else {
             Log.i("Service Fence Key",id);
             Log.i("fence state test",Integer.toString(fenceState.getCurrentState()));
+            String numberId = id.split("/")[1];
             Realm realm = Realm.getDefaultInstance();
-            AlarmModel alarmModel = realm.where(AlarmModel.class).equalTo("id",Long.valueOf(id)).findFirst();
-
+            AlarmModel alarmModel = realm.where(AlarmModel.class).equalTo("id",Long.valueOf(numberId)).findFirst();
+            Log.i("fencestate",id +" : "+fenceState.getCurrentState());
             switch (fenceState.getCurrentState()) {
                 case FenceState.TRUE:
+
                     //TODO : receive 받았을때 notification 생성
-                    Toast.makeText(getApplicationContext(), "You must do it!",Toast.LENGTH_LONG);
                     showNotification(alarmModel);
 
-                    Log.i("id check",intent.getExtras().toString());
+//                    Log.i("id check",intent.getExtras().toString());
+                    FenceUtil.unregisterFence(this, id);
+
+
+
+                    if(alarmModel.getRepeat()) {
+                        Intent setIntent = new Intent(getApplicationContext(), LocationFenceService.class);
+                        PendingIntent pendingIntent = PendingIntent.getService(this, 1, setIntent,0);
+                        FenceUtil.registerFences(alarmModel, getApplicationContext(), pendingIntent, new MainActivity());
+                    } else {
+                        //TODO : switch off
+                        realm.beginTransaction();
+                        alarmModel.setOnoff(false);
+
+                        realm.copyToRealmOrUpdate(alarmModel);
+                        realm.commitTransaction();
+
+                        AlarmListAdapter alarmListAdapter = AlarmListFragment.alarmListAdapter;
+                        alarmListAdapter.notifyDataSetChanged();
+
+                    }
+                    try {
+                        Intent notifyIntent = new Intent(getApplicationContext(), PopupActivity.class);
+                        notifyIntent.putExtra("id", id);
+                        PendingIntent notifyPendingIntent = PendingIntent.getActivity(this, 1, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                        notifyPendingIntent.send();
+                    } catch (PendingIntent.CanceledException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case FenceState.FALSE:
                     Log.i("fencestate",fenceState.toString());
@@ -64,49 +96,52 @@ public class LocationFenceService extends Service {
 
                     break;
             }
+
         }
 
         return START_STICKY;
     }
 
     public void showNotification(AlarmModel alarmModel) {
-//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT|
+                Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("tabFlag",1);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification.Builder builder = new Notification.Builder(this);
 
         builder.setSmallIcon(R.drawable.common_google_signin_btn_icon_dark);
 
 
-//        // 알림 출력 시간.
-//        builder.setWhen(System.currentTimeMillis());
 
         // 알림 제목.
         builder.setContentTitle(alarmModel.getTitle());
 
         // 알림 내용.
-        builder.setContentText("content");
+        builder.setContentText(alarmModel.getAddress());
 
-//        // 알림시 사운드, 진동, 불빛을 설정 가능.
-//        builder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS);
-//
-//        // 알림 터치시 반응.
-//        builder.setContentIntent(pendingIntent);
+        // 알림시 사운드, 진동, 불빛을 설정 가능.
+        builder.setDefaults(Notification.DEFAULT_VIBRATE);
+
+        if(alarmModel.getOnSound()) {
+            builder.setDefaults(Notification.DEFAULT_SOUND);
+        }
+
+        // 알림 터치시 반응.
+        builder.setContentIntent(pendingIntent);
 
         // 알림 터치시 반응 후 알림 삭제 여부.
         builder.setAutoCancel(true);
-//
-//        // 우선순위.
-//        builder.setPriority(NotificationCompat.PRIORITY_MAX);
-
-//        // 행동 최대3개 등록 가능.
-//        builder.addAction(R.mipmap.ic_launcher, "Show", pendingIntent);
-//        builder.addAction(R.mipmap.ic_launcher, "Hide", pendingIntent);
-//        builder.addAction(R.mipmap.ic_launcher, "Remove", pendingIntent);
 
         // 고유ID로 알림을 생성.
         NotificationManager nm = (NotificationManager) getSystemService(this.NOTIFICATION_SERVICE);
-        nm.notify(123456, builder.build());
+        String strId = Long.toString(alarmModel.getId());
+        int notifyId = Integer.valueOf(strId.substring(0,6));
+        nm.notify(notifyId, builder.build());
     }
+
+
 
 
 }
